@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StartupBoost - AI Website Analyzer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #4f46e5 0%, #4338ca 20%, #3730a3 40%, #1e40af 60%, #1e3a8a 80%, #1e293b 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+            padding: 40px 20px;
+        }
+
+        .header h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .input-section {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            margin-bottom: 30px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        input[type="url"] {
+            flex: 1;
+            padding: 18px 24px;
+            font-size: 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            transition: all 0.3s;
+        }
+
+    input[type="url"]:focus {
+      outline: none;
+      border-color: #1e40af;
+      box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.15);
+    }        .analyze-btn {
+            padding: 18px 40px;
+            background: linear-gradient(135deg, #3730a3 0%, #1e40af 50%, #1e3a8a 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+    .analyze-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(30, 64, 175, 0.5);
+    }        .analyze-btn:active {
+            transform: translateY(0);
+        }
+
+        .analyze-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .results {
+            display: none;
+        }
+
+        .results.active {
+            display: block;
+        }
+
+        .results-header {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .results-header h2 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .analyzed-url {
+            color: #667eea;
+            word-break: break-all;
+        }
+
+        .section {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .section h3 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .ai-scores {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        @media (max-width: 900px) {
+            .ai-scores {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (max-width: 600px) {
+            .ai-scores {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .score-card {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .score-label {
+            font-size: 0.9em;
+            color: #555;
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+
+        .score-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .score-max {
+            font-size: 0.8em;
+            color: #888;
+        }
+
+        .personas {
+            display: grid;
+            gap: 20px;
+        }
+
+        .persona-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            border-left: 4px solid #667eea;
+        }
+
+        .persona-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .persona-name {
+            font-weight: 600;
+            font-size: 1.1em;
+            color: #333;
+        }
+
+        .persona-score {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .progress-bar {
+            background: #e0e0e0;
+            height: 10px;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 1s ease-out;
+        }
+
+        .persona-insights {
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .persona-insights li {
+            margin-bottom: 5px;
+            padding-left: 10px;
+        }
+
+        /* Behavioral Drivers Styles */
+        .behavioral-drivers {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        @media (max-width: 900px) {
+            .behavioral-drivers {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (max-width: 600px) {
+            .behavioral-drivers {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .driver-button {
+            padding: 15px 20px;
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 1em;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .driver-button:hover {
+            border-color: #667eea;
+            background: #f8f9ff;
+            transform: translateY(-2px);
+        }
+
+        .driver-button.active {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .driver-details {
+            background: #f8f9ff;
+            padding: 25px;
+            border-radius: 12px;
+            margin-top: 20px;
+            border-left: 4px solid #667eea;
+        }
+
+        .driver-details.active {
+            display: block;
+        }
+
+        .driver-header {
+            font-size: 1.3em;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .driver-description {
+            color: #666;
+            margin-bottom: 20px;
+            font-style: italic;
+        }
+
+        .persona-breakdown {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .persona-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            border: 2px solid #e0e0e0;
+        }
+
+        .persona-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .persona-title {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .persona-badge {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+
+        .suggestions {
+            background: #fff3cd;
+            padding: 20px;
+            border-radius: 12px;
+            border-left: 4px solid #ffc107;
+        }
+
+        .suggestions h4 {
+            color: #856404;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .suggestions ul {
+            list-style: none;
+        }
+
+        .suggestions li {
+            padding: 8px 0;
+            color: #856404;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .suggestions li:before {
+            content: "•";
+            flex-shrink: 0;
+            font-weight: bold;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border-left: 4px solid #dc3545;
+            display: none;
+        }
+
+        .error.active {
+            display: block;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+
+        .badge-success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .badge-warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2em;
+            }
+
+            .input-group {
+                flex-direction: column;
+            }
+
+            .ai-scores {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>StartupBoost</h1>
+            <p>AI-Powered Startup Website Analyzer</p>
+            <p style="margin-top: 10px; font-size: 0.9em;">Score your site on 6 key criteria and analyze for 6 behavioral drivers across 3 personas</p>
+        </div>
+
+        <div class="input-section">
+            <div class="input-group">
+                <input 
+                    type="url" 
+                    id="urlInput" 
+                    placeholder="Enter your startup website URL (e.g., https://yourstartup.com)" 
+                    value=""
+                />
+                <button class="analyze-btn" id="analyzeBtn" onclick="analyzeWebsite()">
+                    Analyze Website
+                </button>
+            </div>
+            <p style="color: #666; font-size: 0.9em; margin-top: 10px;">
+                Get instant AI-powered insights on your startup's website performance across 6 key criteria
+            </p>
+        </div>
+
+        <div class="error" id="error"></div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <h3>Analyzing website...</h3>
+            <p style="color: #666; margin-top: 10px;">Our AI is examining the content, SEO, and user experience</p>
+        </div>
+
+        <div class="results" id="results">
+            <div class="results-header">
+                <h2>Analysis Results</h2>
+                <p class="analyzed-url" id="analyzedUrl"></p>
+            </div>
+
+            <div class="section">
+                <h3>Main Startup Criteria <span class="badge badge-success" id="aiStatus">AI-Powered</span></h3>
+                <p style="color: #666; margin-bottom: 20px;">Your site scored on the 6 most important startup metrics</p>
+                <div class="ai-scores" id="mainCriteria"></div>
+            </div>
+
+            <div class="section">
+                <h3>📋 Detailed Analysis</h3>
+                <div id="detailedAnalysis"></div>
+            </div>
+
+            <div class="section">
+                <h3>Behavioral Drivers</h3>
+                <p style="color: #666; margin-bottom: 20px;">How your website performs for different mindsets across User, Buyer, and Investor personas</p>
+                <div class="behavioral-drivers" id="behavioralDriverButtons"></div>
+                <div id="behavioralDriverDetails"></div>
+            </div>
+
+            <div class="section" style="display: none;" id="personaSection">
+                <h3>👥 Persona Scores (Optional)</h3>
+                <p style="color: #666; margin-bottom: 20px;">How your website performs for different user types</p>
+                <div class="personas" id="personas"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3000/api/analyze';
+
+        async function analyzeWebsite() {
+            const urlInput = document.getElementById('urlInput');
+            const analyzeBtn = document.getElementById('analyzeBtn');
+            const loading = document.getElementById('loading');
+            const results = document.getElementById('results');
+            const error = document.getElementById('error');
+
+            const url = urlInput.value.trim();
+            
+            if (!url) {
+                showError('Please enter a URL');
+                return;
+            }
+
+            // Reset UI
+            error.classList.remove('active');
+            results.classList.remove('active');
+            loading.classList.add('active');
+            analyzeBtn.disabled = true;
+            analyzeBtn.textContent = 'Analyzing...';
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ url })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                displayResults(data);
+
+            } catch (err) {
+                showError('Failed to analyze website. Make sure the server is running and the URL is valid.');
+                console.error('Error:', err);
+            } finally {
+                loading.classList.remove('active');
+                analyzeBtn.disabled = false;
+                analyzeBtn.textContent = 'Analyze Website';
+            }
+        }
+
+        function displayResults(data) {
+            const results = document.getElementById('results');
+            const analyzedUrl = document.getElementById('analyzedUrl');
+            
+            analyzedUrl.textContent = data.url;
+            
+            // Display main criteria (new primary display)
+            displayMainCriteria(data.mainCriteria, data.aiAnalysis);
+            
+            // Display behavioral drivers (NEW)
+            if (data.behavioralDrivers) {
+                displayBehavioralDrivers(data.behavioralDrivers);
+            }
+            
+            // Display personas (optional)
+            // displayPersonas(data.personas);
+            
+            results.classList.add('active');
+        }
+
+        function displayMainCriteria(mainCriteria, aiAnalysis) {
+            const mainCriteriaDiv = document.getElementById('mainCriteria');
+            const detailedAnalysis = document.getElementById('detailedAnalysis');
+            const aiStatus = document.getElementById('aiStatus');
+
+            if (!aiAnalysis.success) {
+                aiStatus.className = 'badge badge-warning';
+                aiStatus.textContent = 'Technical Analysis';
+            }
+
+            const criteria = [
+                { 
+                    key: 'valueProposition', 
+                    label: 'Value Proposition Clarity', 
+                    icon: '💎',
+                    data: mainCriteria.valueProposition 
+                },
+                { 
+                    key: 'ctaStrength', 
+                    label: 'CTA Strength & Placement', 
+                    icon: '',
+                    data: mainCriteria.ctaStrength 
+                },
+                { 
+                    key: 'socialProof', 
+                    label: 'Social Proof & Trust Signals', 
+                    icon: '',
+                    data: mainCriteria.socialProof 
+                },
+                { 
+                    key: 'visualReadability', 
+                    label: 'Visual Readability & Legibility', 
+                    icon: '',
+                    data: mainCriteria.visualReadability 
+                },
+                { 
+                    key: 'seoDiscoverability', 
+                    label: 'SEO & Discoverability Basics', 
+                    icon: '',
+                    data: mainCriteria.seoDiscoverability 
+                },
+                { 
+                    key: 'globalReach', 
+                    label: 'Global Reach & Accessibility', 
+                    icon: '',
+                    data: mainCriteria.globalReach 
+                }
+            ];
+
+            // Display score cards
+            mainCriteriaDiv.innerHTML = criteria.map(c => `
+                <div class="score-card">
+                    <div class="score-label">${c.label}</div>
+                    <div class="score-value">${c.data.score}<span class="score-max">/10</span></div>
+                </div>
+            `).join('');
+
+            // Display detailed breakdown
+            detailedAnalysis.innerHTML = criteria.map(c => `
+                <div class="persona-card" style="margin-bottom: 20px;">
+                    <div class="persona-header">
+                        <span class="persona-name">${c.label}</span>
+                        <span class="persona-score">${c.data.score}/10</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${c.data.score * 10}%"></div>
+                    </div>
+                    
+                    ${c.data.analysis.aiInsight ? `
+                        <p style="color: #555; margin: 15px 0; padding: 10px; background: #f8f9fa; border-radius: 8px;">
+                            <strong>AI Insight:</strong> ${c.data.analysis.aiInsight}
+                        </p>
+                    ` : ''}
+                    
+                    ${c.data.analysis.strengths && c.data.analysis.strengths.length > 0 ? `
+                        <div style="margin: 10px 0;">
+                            <strong style="color: #28a745;">✓ Strengths:</strong>
+                            <ul class="persona-insights">
+                                ${c.data.analysis.strengths.map(s => `<li style="color: #28a745;">${s}</li>`).join('')}
+                            </ul>
+                        </div>
+                    ` : ''}
+                    
+                    ${c.data.analysis.weaknesses && c.data.analysis.weaknesses.length > 0 ? `
+                        <div style="margin: 10px 0;">
+                            <strong style="color: #dc3545;">⚠ Needs Improvement:</strong>
+                            <ul class="persona-insights">
+                                ${c.data.analysis.weaknesses.map(w => `<li style="color: #dc3545;">${w}</li>`).join('')}
+                            </ul>
+                        </div>
+                    ` : ''}
+                    
+                    ${c.data.analysis.suggestion ? `
+                        <div style="margin-top: 15px; padding: 12px; background: #fff3cd; border-radius: 8px; border-left: 4px solid #ffc107;">
+                            <strong style="color: #856404;">Suggestion:</strong>
+                            <p style="color: #856404; margin: 5px 0 0 0;">${c.data.analysis.suggestion}</p>
+                        </div>
+                    ` : ''}
+                </div>
+            `).join('');
+        }
+
+        function displayPersonas(personas) {
+            const personasDiv = document.getElementById('personas');
+            
+            const personaList = [
+                { key: 'impatientUser', icon: '', name: 'Impatient User' },
+                { key: 'skepticalUser', icon: '', name: 'Skeptical User' },
+                { key: 'contentQualitySeeker', icon: '', name: 'Content Quality Seeker' },
+                { key: 'adHater', icon: '', name: 'Ad Hater' },
+                { key: 'seoOptimizer', icon: '', name: 'SEO Optimizer' }
+            ];
+
+            personasDiv.innerHTML = personaList.map(p => {
+                const persona = personas[p.key];
+                return `
+                    <div class="persona-card">
+                        <div class="persona-header">
+                            <span class="persona-name">${p.icon} ${p.name}</span>
+                            <span class="persona-score">${persona.score}/${persona.maxScore}</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${persona.percentage}%"></div>
+                        </div>
+                        <p style="color: #666; font-size: 0.9em; margin-bottom: 10px;">${persona.description}</p>
+                        <ul class="persona-insights">
+                            ${persona.insights.slice(0, 4).map(i => `<li>${i}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // NEW: Display Behavioral Drivers
+        function displayBehavioralDrivers(drivers) {
+            const buttonsDiv = document.getElementById('behavioralDriverButtons');
+            const detailsDiv = document.getElementById('behavioralDriverDetails');
+
+            const driverConfig = [
+                { key: 'impatient', icon: '', label: 'Impatient' },
+                { key: 'skeptical', icon: '', label: 'Skeptical' },
+                { key: 'analytical', icon: '', label: 'Analytical' },
+                { key: 'indecisive', icon: '', label: 'Indecisive' },
+                { key: 'cognitiveEase', icon: '', label: 'Cognitive-Ease' },
+                { key: 'valueSeeking', icon: '', label: 'Value-Seeking' }
+            ];
+
+            // Create driver buttons
+            buttonsDiv.innerHTML = driverConfig.map(config => `
+                <button class="driver-button" data-driver="${config.key}">
+                    ${config.label}
+                </button>
+            `).join('');
+
+            // Store drivers data globally for click handlers
+            window.behavioralDriversData = drivers;
+            
+            // Add click event listeners to buttons
+            buttonsDiv.querySelectorAll('.driver-button').forEach(button => {
+                button.addEventListener('click', function() {
+                    const driverKey = this.getAttribute('data-driver');
+                    toggleDriver(driverKey, this);
+                });
+            });
+        }
+
+        // Toggle driver details
+        let activeDriver = null;
+        function toggleDriver(driverKey, buttonElement) {
+            const detailsDiv = document.getElementById('behavioralDriverDetails');
+            const buttons = document.querySelectorAll('.driver-button');
+            const drivers = window.behavioralDriversData;
+
+            // If clicking the same driver, close it
+            if (activeDriver === driverKey) {
+                detailsDiv.innerHTML = '';
+                activeDriver = null;
+                buttons.forEach(btn => btn.classList.remove('active'));
+                return;
+            }
+
+            // Update active state
+            activeDriver = driverKey;
+            buttons.forEach(btn => btn.classList.remove('active'));
+            buttonElement.classList.add('active');
+
+            // Get driver data
+            const driver = drivers[driverKey];
+            if (!driver) return;
+
+            const driverIcons = {
+                'impatient': '',
+                'skeptical': '',
+                'analytical': '',
+                'indecisive': '',
+                'cognitiveEase': '',
+                'valueSeeking': ''
+            };
+
+            const personaIcons = {
+                user: '',
+                buyer: '',
+                investor: ''
+            };
+
+            // Display driver details
+            detailsDiv.innerHTML = `
+                <div class="driver-details active">
+                    <div class="driver-header">
+                        ${driver.name}
+                    </div>
+                    <div class="driver-description">
+                        ${driver.description}
+                    </div>
+                    <div class="persona-breakdown">
+                        ${['user', 'buyer', 'investor'].map(personaKey => {
+                            const persona = driver[personaKey];
+                            return `
+                                <div class="persona-card">
+                                    <div class="persona-card-header">
+                                        <div class="persona-title">
+                                            ${personaKey.charAt(0).toUpperCase() + personaKey.slice(1)}
+                                        </div>
+                                        <div class="persona-badge">${persona.score}/10</div>
+                                    </div>
+                                    <div class="progress-bar">
+                                        <div class="progress-fill" style="width: ${persona.score * 10}%"></div>
+                                    </div>
+                                    ${persona.breakdown ? `
+                                        <div style="font-size: 0.9em; color: #666; margin-bottom: 10px;">
+                                            Technical: ${persona.breakdown.technical}/10 | AI: ${persona.breakdown.ai}/10
+                                        </div>
+                                    ` : ''}
+                                    ${persona.strengths && persona.strengths.length > 0 ? `
+                                        <div style="margin-bottom: 10px;">
+                                            <strong style="color: #28a745;">✓ Strengths:</strong>
+                                            <ul class="persona-insights">
+                                                ${persona.strengths.map(s => `<li>${s}</li>`).join('')}
+                                            </ul>
+                                        </div>
+                                    ` : ''}
+                                    ${persona.weaknesses && persona.weaknesses.length > 0 ? `
+                                        <div>
+                                            <strong style="color: #dc3545;">✗ Needs Work:</strong>
+                                            <ul class="persona-insights">
+                                                ${persona.weaknesses.map(w => `<li>${w}</li>`).join('')}
+                                            </ul>
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function showError(message) {
+            const error = document.getElementById('error');
+            error.textContent = message;
+            error.classList.add('active');
+        }
+
+        // Allow Enter key to submit
+        document.getElementById('urlInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                analyzeWebsite();
+            }
+        });
+    </script>
+</body>
+</html>
